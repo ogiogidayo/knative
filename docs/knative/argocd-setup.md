@@ -101,6 +101,44 @@ nginx-sample   http://nginx-sample.default.136.110.97.162.sslip.io   nginx-sampl
 
 ---
 
+### 5. ArgoCD UI で確認
+
+#### アプリ概要（リソースツリー全体）
+
+![ArgoCD アプリ概要](./knative-argo/スクリーンショット%202026-03-29%2010.47.23.png)
+
+- **APP HEALTH: Healthy** — アプリが正常稼働中
+- **SYNC STATUS: Synced** — GitHub の HEAD と一致している
+- **LAST SYNC: Sync OK** — 直近の同期が成功
+
+左側のリソースツリーでは Knative が `ksvc` 1つから自動生成するリソース群が確認できる：
+
+| リソース | 種別 | 説明 |
+|---|---|---|
+| `nginx-sample` | Application | ArgoCD が管理するアプリ |
+| `nginx-sample` | Knative Service (ksvc) | Knative のトップレベルリソース |
+| `nginx-sample` | Service (ExternalName) | Kourier へのエイリアス（外部トラフィックの入口） |
+| `nginx-sample-00001` | Revision | デプロイごとに作られる不変スナップショット |
+| `nginx-sample-00001` | Service (ClusterIP) | Activator 経由のルート |
+
+#### リソースツリー詳細（Revision 配下）
+
+![ArgoCD リソースツリー詳細](./knative-argo/スクリーンショット%202026-03-29%2010.47.49.png)
+
+Revision `nginx-sample-00001` 配下に Knative が自動生成するリソース：
+
+| リソース | 説明 |
+|---|---|
+| `nginx-sample-00001` (Deployment) | 実際の Pod を管理する Deployment |
+| `nginx-sample-00001` (ReplicaSet) | Deployment が生成する ReplicaSet |
+| `nginx-sample-00001` (Service) | Activator 経由のパブリックルート（port 80/443） |
+| `nginx-sample-00001-private` (Service) | Pod への直接ルート（Activator バイパス用） |
+| `nginx-sample-00001-cache-...` | Knative が内部管理に使う ConfigMap |
+
+これらはすべて `ksvc` 1つを apply するだけで Knative が自動生成する。ArgoCD はそれらをすべて Git 管理対象として可視化している。
+
+---
+
 ## 補足: selfHeal の挙動
 
 `selfHeal: true` を設定しているため、クラスター上のリソースを手動で削除しても ArgoCD が Git の状態に戻す。
