@@ -1,0 +1,12 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: myapp
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - image: docker.io/library/nginx:alpine
+          ports:
+            - containerPort: 80

@@ -1,0 +1,19 @@
+grafana:
+  adminUser: admin
+  defaultDashboardsEnabled: true
+  service:
+    type: ClusterIP
+
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    scrapeInterval: 30s
+
+alertmanager:
+  enabled: false  # 必要になったら有効化
+
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true

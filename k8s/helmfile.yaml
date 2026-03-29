@@ -1,0 +1,29 @@
+environments:
+  dev:
+  prod:
+
+---
+
+repositories:
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
+  - name: argo
+    url: https://argoproj.github.io/argo-helm
+
+releases:
+  - name: kube-prometheus-stack
+    chart: prometheus-community/kube-prometheus-stack
+    namespace: monitoring
+    createNamespace: true
+    values:
+      - helm-values/kube-prometheus-stack/base.yaml
+      - helm-values/kube-prometheus-stack/{{ .Environment.Name }}.yaml
+
+  - name: argocd
+    chart: argo/argo-cd
+    version: 9.4.17
+    namespace: argocd
+    createNamespace: true
+    values:
+      - helm-values/argocd/base.yaml
+      - helm-values/argocd/{{ .Environment.Name }}.yaml

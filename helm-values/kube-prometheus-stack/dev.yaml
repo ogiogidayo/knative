@@ -1,0 +1,12 @@
+grafana:
+  adminPassword: admin  # devのみ平文OK
+  persistence:
+    enabled: false
+
+prometheus:
+  prometheusSpec:
+    retention: 1d
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
