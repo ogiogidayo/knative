@@ -5,8 +5,18 @@ metadata:
   namespace: default
 spec:
   template:
+    metadata:
+      name: nginx-sample-v2
     spec:
       containers:
         - image: docker.io/library/nginx:alpine
           ports:
             - containerPort: 80
+          env:
+            - name: APP_VERSION
+              value: "v2"
+  traffic:
+    - revisionName: nginx-sample-00001
+      percent: 50
+    - revisionName: nginx-sample-v2
+      percent: 50
