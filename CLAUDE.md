@@ -47,16 +47,16 @@ kubectl apply -k k8s/kustomize/base/knative-eventing/core/
 
 ## Deploying the Sample App
 
-Base manifest (`k8s/kustomize/base/myapp/ksvc.yaml`) uses `nginx:alpine`. Overlays swap the image tag for environment-specific builds (`gcr.io/PROJECT_ID/myapp`).
+Base manifest (`k8s/kustomize/base/nginx-sample/ksvc.yaml`) uses `nginx:alpine`. Overlays swap the image tag for environment-specific builds (`gcr.io/PROJECT_ID/nginx-sample`).
 
 ```bash
 # Base (nginx:alpine)
-kubectl apply -k k8s/kustomize/base/myapp/
+kubectl apply -k k8s/kustomize/base/nginx-sample/
 
-# Dev overlay (gcr.io/PROJECT_ID/myapp:dev)
+# Dev overlay (gcr.io/PROJECT_ID/nginx-sample:dev)
 kubectl apply -k k8s/kustomize/overlays/dev/
 
-# Prod overlay (gcr.io/PROJECT_ID/myapp:latest)
+# Prod overlay (gcr.io/PROJECT_ID/nginx-sample:latest)
 kubectl apply -k k8s/kustomize/overlays/prod/
 ```
 
@@ -75,7 +75,7 @@ Base values in `helm-values/kube-prometheus-stack/base.yaml`; environment overri
 
 ## Architecture
 
-Traffic flow: `External → svc/kourier (LoadBalancer) → 3scale-kourier-gateway → [activator if scaled-to-zero] → pod/myapp`
+Traffic flow: `External → svc/kourier (LoadBalancer) → 3scale-kourier-gateway → [activator if scaled-to-zero] → pod/nginx-sample`
 
 Knative Serving creates 4 resource types per `ksvc`:
 - **Service (ksvc)** — top-level manager

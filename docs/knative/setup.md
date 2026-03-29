@@ -65,12 +65,34 @@ webhook-5f9bf9cbc4-58vbx                  1/1     Running   0          109s
 
 ---
 
-### 4. サンプルアプリデプロイ
+### 4. サンプルアプリデプロイ（nginx-sample）
 
-```bash
-$ kubectl apply -k ./kustomize/base/myapp/
-Warning: Kubernetes default value is insecure, Knative may default this to secure in a future release: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation, spec.template.spec.containers[0].securityContext.capabilities, spec.template.spec.containers[0].securityContext.runAsNonRoot, spec.template.spec.containers[0].securityContext.seccompProfile
-service.serving.knative.dev/myapp created
+#### マニフェスト (`k8s/kustomize/base/nginx-sample/ksvc.yaml`)
+
+```yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: nginx-sample
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - image: docker.io/library/nginx:alpine
+          ports:
+            - containerPort: 80
 ```
 
-✅ 完了（Warningはセキュリティコンテキスト未設定の注意、動作には影響なし）
+#### デプロイ
+
+```bash
+kubectl apply -k k8s/kustomize/base/nginx-sample/
+```
+
+#### 動作確認
+
+```bash
+kubectl get ksvc -n default
+kubectl get revisions -n default
+```
