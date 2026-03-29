@@ -12,14 +12,27 @@
 ### 1. インストール
 
 ```bash
+cd k8s
 helmfile -e dev sync -l name=argocd
 ```
+
+✅ 完了
 
 ### 2. 動作確認
 
 ```bash
-kubectl get pods -n argocd
+$ kubectl get pods -n argocd
+NAME                                                READY   STATUS    RESTARTS   AGE
+argocd-application-controller-0                     1/1     Running   0          ...
+argocd-applicationset-controller-...               1/1     Running   0          ...
+argocd-dex-server-...                              1/1     Running   0          ...
+argocd-notifications-controller-...               1/1     Running   0          ...
+argocd-redis-...                                   1/1     Running   0          ...
+argocd-repo-server-...                             1/1     Running   0          ...
+argocd-server-...                                  1/1     Running   0          ...
 ```
+
+✅ 全Pod Running
 
 ### 3. UIへのアクセス
 
@@ -35,4 +48,66 @@ kubectl port-forward svc/argocd-server -n argocd 8080:80
 ```bash
 kubectl get secret argocd-initial-admin-secret -n argocd \
   -o jsonpath="{.data.password}" | base64 -d
+```
+
+---
+
+### 4. nginx-sample を ArgoCD で管理
+
+#### Application マニフェスト (`k8s/argocd/apps/nginx-sample.yaml`)
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-sample
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/ogiogidayo/knative
+    targetRevision: HEAD
+    path: k8s/kustomize/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+```
+
+#### 適用
+
+```bash
+kubectl apply -f k8s/argocd/apps/nginx-sample.yaml
+```
+
+#### 動作確認
+
+```bash
+$ kubectl get application -n argocd
+NAME           SYNC STATUS   HEALTH STATUS
+nginx-sample   Synced        Healthy
+
+$ kubectl get ksvc -n default
+NAME           URL                                                   LATESTCREATED        LATESTREADY          READY   REASON
+nginx-sample   http://nginx-sample.default.136.110.97.162.sslip.io   nginx-sample-00001   nginx-sample-00001   True
+```
+
+✅ ArgoCD から nginx-sample が Synced / Healthy
+
+---
+
+## 補足: selfHeal の挙動
+
+`selfHeal: true` を設定しているため、クラスター上のリソースを手動で削除しても ArgoCD が Git の状態に戻す。
+アプリを完全に削除したい場合は **ArgoCD Application を先に削除**してから ksvc を削除する。
+
+```bash
+# 正しい削除手順
+kubectl delete application <name> -n argocd
+kubectl delete ksvc <name> -n default
 ```
