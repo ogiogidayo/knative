@@ -96,3 +96,73 @@ kubectl apply -k k8s/kustomize/base/nginx-sample/
 kubectl get ksvc -n default
 kubectl get revisions -n default
 ```
+
+---
+
+### 5. リビジョン v2 作成 & トラフィック 50/50 分割
+
+#### ksvc.yaml の差分
+
+`template.metadata.name` でリビジョン名を明示し、`traffic` セクションで割合を指定する。
+
+```yaml
+spec:
+  template:
+    metadata:
+      name: nginx-sample-v2       # リビジョン名を明示
+    spec:
+      containers:
+        - image: docker.io/library/nginx:alpine
+          ports:
+            - containerPort: 80
+          env:
+            - name: APP_VERSION
+              value: "v2"         # 変更を加えて新リビジョンをトリガー
+  traffic:
+    - revisionName: nginx-sample-00001  # 既存リビジョン
+      percent: 50
+    - revisionName: nginx-sample-v2     # 新リビジョン
+      percent: 50
+```
+
+#### 適用方法（GitOps）
+
+マニフェストを Git に push するだけで ArgoCD が自動 apply する。`kubectl apply` は不要。
+
+```bash
+git add k8s/kustomize/base/nginx-sample/ksvc.yaml
+git commit -m "feat: add nginx-sample-v2 with 50/50 traffic split"
+git push origin main
+# → ArgoCD が自動検知して sync
+```
+
+#### 結果
+
+```bash
+$ kubectl get revisions -n default
+NAME                 CONFIG NAME    GENERATION   READY   ACTUAL REPLICAS   DESIRED REPLICAS
+nginx-sample-00001   nginx-sample   1            True    0                 0
+nginx-sample-v2      nginx-sample   2            True    1                 1
+
+$ kubectl get ksvc nginx-sample -n default -o jsonpath='{.status.traffic}' | python3 -m json.tool
+[
+    {
+        "latestRevision": false,
+        "percent": 50,
+        "revisionName": "nginx-sample-00001"
+    },
+    {
+        "latestRevision": false,
+        "percent": 50,
+        "revisionName": "nginx-sample-v2"
+    }
+]
+```
+
+✅ 2つのリビジョンに 50/50 でトラフィックが分散
+
+#### ポイント
+
+- `template.metadata.name` を省略すると Knative が `nginx-sample-00001`, `00002` ... と自動採番する
+- 明示することでリビジョン名を予測可能にし、`traffic` セクションで参照できる
+- `nginx-sample-00001` はスケールゼロ（リクエストがないため）、`nginx-sample-v2` はリクエスト処理中で 1 Pod 起動中
